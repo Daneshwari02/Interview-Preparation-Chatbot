@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <!-- Background Animations -->
+    <div class="bg-blob"
+        style="top: -100px; left: -100px; width: 400px; height: 400px; background: rgba(59, 130, 246, 0.2);"></div>
+    <div class="bg-blob"
+        style="bottom: -100px; right: -100px; width: 500px; height: 500px; background: rgba(99, 102, 241, 0.15); animation-delay: -2s;">
+    </div>
+    <div class="bg-blob"
+        style="top: 40%; left: 30%; width: 300px; height: 300px; background: rgba(14, 165, 233, 0.1); animation-delay: -4s;">
+    </div>
+
+    <nav>
+        <div class="nav-logo" onclick="window.location.href='/'" style="cursor: pointer;">Intervault</div>
+        <div class="nav-links">
+            <a href="/#how" style="margin-right: 20px;">Features</a>
+            <a href="#analyze" style="cursor: pointer;">Upload Resume</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero reveal">
+            <h1>Optimize your career with <span style="color: var(--primary);">AI precision.</span></h1>
+            <p>
+                Get professional ATS scores, smart skill extraction, and custom interview prep
+                in seconds. Upload your resume and get started instantly.
+            </p>
+            <div class="hero-btns">
+                <a href="#analyze" class="btn btn-primary" style="border: none;">Start Analysis</a>
+                <a href="#how" class="btn btn-outline">See Features</a>
+            </div>
+        </section>
+
+        <!-- Info Cards Section -->
+        <section id="how" class="info-section">
+            <div class="reveal">
+                <span class="section-tag">Why use us?</span>
+                <h2>Powerful features for your success</h2>
+            </div>
+
+            <div class="card-grid">
+                <div class="info-card reveal">
+                    <span class="icon">📈</span>
+                    <h3>ATS Precision</h3>
+                    <p>We analyze your resume for critical sections, contact details, and structural depth, while our AI
+                        evaluates the actual quality of your career achievements to provide an accurate, field-by-field
+                        score.</p>
+                </div>
+                <div class="info-card reveal">
+                    <span class="icon">✨</span>
+                    <h3>Skill Insights</h3>
+                    <p>Powered by Groq and Llama 3, we intelligently extract your core competencies and generate a
+                        concise, professional summary of your profile.</p>
+                </div>
+                <div class="info-card reveal">
+                    <span class="icon">🎙️</span>
+                    <h3>Interview Prep</h3>
+                    <p>Receive 15 personalized interview questions categorized by difficulty (Beginner, Professional,
+                        Expert), generated directly from your unique skills and experience.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section id="analyze" class="upload-section reveal">
+            <span class="section-tag">Get Started</span>
+            <h2>Upload your Resume</h2>
+
+
+            <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-card" onclick="document.getElementById('fileInput').click()">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">☁️</div>
+                    <h3 id="uploadTitle">Drag & Drop or Click to Select</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Only PDF files are
+                        supported</p>
+                    <p id="fileName" style="margin-top: 15px; color: var(--primary); font-weight: 600;"></p>
+                    <input type="file" name="resume" id="fileInput" accept=".pdf" style="display: none;"
+                        onchange="handleFileChange()">
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <button type="submit" class="btn btn-primary" id="submitBtn"
+                        style="width: 100%; max-width: 400px; margin-top: 30px;">
+                        Start Analysis
+                    </button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+
+    <footer
+        style="padding: 60px; text-align: center; border-top: 1px solid var(--card-border); color: var(--text-muted);">
+
+    </footer>
+
+    <script>
+        // Scroll Reveal Animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        document.querySelectorAll('.info-card').forEach(el => observer.observe(el));
+
+        const uploadCard = document.querySelector('.upload-card');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadCard.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadCard.style.borderColor = 'var(--primary)';
+            uploadCard.style.background = 'rgba(59, 130, 246, 0.05)';
+        });
+
+        uploadCard.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadCard.style.borderColor = 'var(--card-border)';
+            uploadCard.style.background = 'var(--card-bg)';
+        });
+
+        uploadCard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadCard.style.borderColor = 'var(--card-border)';
+            uploadCard.style.background = 'var(--card-bg)';
+
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileChange();
+            }
+        });
+
+        function handleFileChange() {
+            const input = document.getElementById('fileInput');
+            const fileName = document.getElementById('fileName');
+            const title = document.getElementById('uploadTitle');
+            const btn = document.getElementById('submitBtn');
+
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+                if (!isPdf) {
+                    title.innerText = "Invalid format";
+                    title.style.color = "red";
+                    fileName.innerText = "Please upload a PDF file only. JPGs and other formats are not allowed.";
+                    fileName.style.color = "red";
+                    btn.disabled = true;
+                    input.value = ''; // Clear the invalid file
+                } else {
+                    fileName.innerText = "Selected: " + file.name;
+                    fileName.style.color = "var(--primary)";
+                    title.innerText = "File selected!";
+                    title.style.color = "initial";
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        document.getElementById('uploadForm').onsubmit = (e) => {
+            const input = document.getElementById('fileInput');
+            if (input.files.length === 0) {
+                e.preventDefault();
+                alert("Please select a PDF file first.");
+                return false;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<span class="loader"></span> Processing...';
+            btn.disabled = true;
+        };
+    </script>
+</body>
+
+</html>

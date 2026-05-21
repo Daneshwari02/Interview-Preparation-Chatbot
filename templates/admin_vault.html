@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Vault - Intervault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 140px 20px 80px;
+        }
+
+        .admin-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--card-border);
+        }
+
+        td {
+            padding: 20px 15px;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        tr:hover td {
+            background: rgba(79, 70, 229, 0.02);
+        }
+
+        .score-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .score-high { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .score-med { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .score-low { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        .btn-view {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-view:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background Animations -->
+    <div class="bg-blob" style="top: -100px; left: -100px; width: 400px; height: 400px; background: rgba(59, 130, 246, 0.2);"></div>
+    <div class="bg-blob" style="bottom: -100px; right: -100px; width: 500px; height: 500px; background: rgba(99, 102, 241, 0.15); animation-delay: -2s;"></div>
+
+    <nav>
+        <div class="nav-logo" onclick="window.location.href='/'" style="cursor: pointer;">Intervault</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+        </div>
+    </nav>
+
+    <main class="admin-container">
+        <div class="admin-card reveal active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <span class="section-tag">System Overview</span>
+                    <h2 style="margin-bottom: 0;">Admin Vault</h2>
+                    <p style="color: var(--text-muted); margin-top: 5px;">Total Records: {{ candidates|length }}</p>
+                </div>
+            </div>
+
+            {% if candidates %}
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>ATS Score</th>
+                            <th>Key Summary</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for candidate in candidates %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ candidate.filename }}</td>
+                            <td>
+                                {% set score = candidate.ats_score | default(0) %}
+                                <span class="score-pill {% if score >= 80 %}score-high{% elif score >= 50 %}score-med{% else %}score-low{% endif %}">
+                                    {{ score }}%
+                                </span>
+                            </td>
+                            <td style="max-width: 400px; color: var(--text-muted); font-size: 0.9rem;">
+                                {{ candidate.summary[:150] }}{% if candidate.summary|length > 150 %}...{% endif %}
+                            </td>
+                            <td>
+                                <a href="/candidate/{{ candidate._id }}" class="btn-view">View Analysis →</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 60px; color: var(--text-muted);">
+                <span style="font-size: 3rem;">📂</span>
+                <p style="margin-top: 20px;">No resumes have been analyzed yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        // Scroll Reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+
+</html>

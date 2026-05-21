@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Complete - AI Resume</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .report-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .score-display {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .results-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: 1px solid rgba(79, 70, 229, 0.1);
+            margin: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .qa-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .qa-card:hover {
+            border-color: var(--primary);
+        }
+
+        .qa-answer {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--card-border);
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background Animations -->
+    <div class="bg-blob" style="top: -100px; left: -100px; width: 400px; height: 400px; background: rgba(59, 130, 246, 0.2);"></div>
+    <div class="bg-blob" style="bottom: -100px; right: -100px; width: 500px; height: 500px; background: rgba(99, 102, 241, 0.15); animation-delay: -2s;"></div>
+    <div class="bg-blob" style="top: 40%; left: 30%; width: 300px; height: 300px; background: rgba(14, 165, 233, 0.1); animation-delay: -4s;"></div>
+
+    <nav>
+        <div class="nav-logo" onclick="window.location.href='/'" style="cursor: pointer;">Intervault</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+        </div>
+    </nav>
+
+    <main class="results-container" style="padding-top: 150px; padding-bottom: 100px;">
+        <div class="report-header reveal">
+            <span class="section-tag">Analysis Complete</span>
+            <h1>Resume Insights for <span style="color: var(--primary);">{{ filename }}</span></h1>
+        </div>
+
+        <div class="info-card reveal" style="margin-bottom: 40px; opacity: 1; transform: none;">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <span class="icon" style="margin-bottom: 0;">🛠️</span>
+                <h3 style="margin-bottom: 0;">Analyzed Professional Skills</h3>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                {% for skill in skills %}
+                <span class="tag" style="font-size: 0.95rem; padding: 8px 18px;">{{
+                    skill }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Overall Score & Summary -->
+        <div class="top-summary-container reveal">
+            <div class="score-circle-wrapper">
+                <div class="score-circle" style="--percent: {{ ats_score }}%; {% if ats_score >= 80 %}--warning: #10b981;{% elif ats_score >= 50 %}--warning: #f59e0b;{% else %}--warning: #ef4444;{% endif %}">
+                    <div class="score-text-inner">
+                        <span class="num">{{ ats_score }}</span>
+                        <span class="out-of">out of 100</span>
+                    </div>
+                </div>
+            </div>
+            <div class="overall-summary-text">
+                <strong style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 5px; display: inline-block;">Overall ATS score</strong><br>
+                {{ ats_overall_summary }}
+            </div>
+        </div>
+
+        {% if ats_fields %}
+        <!-- Quick Scores Grid -->
+        <div class="quick-scores-grid reveal">
+            {% for field in ats_fields %}
+            <div class="quick-score-card">
+                <div class="qs-name">{{ field.name }}</div>
+                <div class="qs-score" style="{% if field.score >= 80 %}color: #10b981;{% elif field.score >= 50 %}color: #f59e0b;{% else %}color: #ef4444;{% endif %}">{{ field.score }}/100</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Section-by-section scores -->
+        <div class="bar-chart-section reveal">
+            <h3 style="margin-bottom: 25px; font-size: 1.1rem;">Section-by-section scores</h3>
+            {% for field in ats_fields %}
+            <div class="bar-chart-row">
+                <div class="bar-chart-name">{{ field.name }}</div>
+                <div class="bar-chart-bar-container">
+                    <div class="bar-chart-bar" style="width: {{ field.score }}%; {% if field.score >= 80 %}background: #10b981;{% elif field.score >= 50 %}background: #f59e0b;{% else %}background: #ef4444;{% endif %}"></div>
+                </div>
+                <div class="bar-chart-score">{{ field.score }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Issues Found Section -->
+        <div class="reveal">
+            <h3 style="margin-bottom: 20px; font-size: 1.1rem;">Issues found & how to fix them</h3>
+            {% set vars = namespace(has_issues=false) %}
+            {% for field in ats_fields %}
+                {% if field.improvements %}
+                    {% set vars.has_issues = true %}
+                    {% for imp in field.improvements %}
+                    <div class="issue-card">
+                        <div class="issue-header">
+                            {% if imp is mapping %}
+                                <span class="severity-badge sev-{{ imp.severity | default('Moderate') }}">{{ imp.severity | default('Moderate') }}</span>
+                                <span class="issue-title">{{ imp.issue_title | default(field.name ~ ' Improvement') }}</span>
+                            {% else %}
+                                <span class="severity-badge sev-Moderate">Moderate</span>
+                                <span class="issue-title">{{ field.name }} Feedback</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if imp is mapping %}
+                            <div class="issue-description">{{ imp.description }}</div>
+                            <div class="suggestion-box">{{ imp.suggestion }}</div>
+                            <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; margin-top: 15px; border-width: 1px;" onclick="fixIssue(this, '{{ field.name }}', '{{ imp.issue_title }}')">Fix it for me</button>
+                            <div class="fix-result" style="display: none; margin-top: 15px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; line-height: 1.6;"></div>
+                        {% else %}
+                            <div class="issue-description">{{ imp }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if not vars.has_issues %}
+            <div class="issue-card" style="text-align: center; color: var(--success);">
+                <strong>✅ Great job! No major structural issues found.</strong>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Fallback for older scans without detailed fields -->
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; margin-bottom: 60px;">
+            <div class="info-card reveal" style="opacity: 1; transform: none; height: fit-content; align-self: start;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div class="score-display">{{ ats_score }}%</div>
+                    <h3>Overall ATS Score</h3>
+                </div>
+            </div>
+            <div class="info-card reveal" style="margin-bottom: 40px;">
+                <h3>Analysis Feedback</h3>
+                <ul class="improvement-list">
+                    {% for item in ats_feedback %}
+                    <li class="improvement-item"><span>💡</span> {{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AI Profile Insights -->
+        <div class="info-card reveal" style="margin-bottom: 60px;">
+            <h3>Profile Insights</h3>
+            <p style="margin-top: 20px; line-height: 1.8; font-style: italic; font-size: 1.1rem; color: var(--text-main);">
+                "{{ summary }}"
+            </p>
+        </div>
+
+        <!-- Target Job Matcher -->
+        <div class="reveal" id="job-matcher-section" style="margin-bottom: 60px;">
+            <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
+                Target Job Matcher
+            </h2>
+            <div class="info-card" style="margin-bottom: 20px;">
+                <p style="margin-bottom: 15px; color: var(--text-muted);">Paste a job description below to see how well your resume matches.</p>
+                <textarea id="jd-input" class="form-input" rows="6" placeholder="Paste Job Description here..." style="resize: vertical; font-size: 0.95rem; margin-bottom: 20px;">{{ target_jd }}</textarea>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button id="btn-match-jd" class="btn btn-primary" onclick="analyzeJobMatch()">Analyze Job Match</button>
+                </div>
+            </div>
+
+            <!-- JD Match Results Container -->
+            <div id="jd-match-results" style="display: {% if jd_match %}block{% else %}none{% endif %}; margin-bottom: 20px;">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 20px;">Match Analysis</h3>
+                    <div style="display: flex; gap: 40px; align-items: center; flex-wrap: wrap;">
+                        <div class="score-circle-wrapper">
+                            <div id="jd-score-circle" class="score-circle" style="--percent: {{ jd_match.match_percentage if jd_match else 0 }}%; {% if jd_match and jd_match.match_percentage >= 80 %}--warning: #10b981;{% elif jd_match and jd_match.match_percentage >= 50 %}--warning: #f59e0b;{% else %}--warning: #ef4444;{% endif %}">
+                                <div class="score-text-inner">
+                                    <span id="jd-score-text" class="num">{{ jd_match.match_percentage if jd_match else 0 }}</span>
+                                    <span class="out-of">Match %</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <p id="jd-match-analysis" style="color: var(--text-main); font-weight: 500; font-size: 1.05rem; margin-bottom: 15px;">
+                                {{ jd_match.match_analysis if jd_match else '' }}
+                            </p>
+                            <div id="jd-missing-skills-container" style="display: {% if jd_match and jd_match.missing_skills %}block{% else %}none{% endif %};">
+                                <strong style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Missing Critical Skills:</strong>
+                                <div id="jd-missing-skills" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                                    {% if jd_match and jd_match.missing_skills %}
+                                        {% for skill in jd_match.missing_skills %}
+                                            <span class="tag" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">{{ skill }}</span>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="reveal">
+            <h2 style="margin-bottom: 30px; display: flex; align-items: center; gap: 15px;">
+                <span>🎙️</span> Interview Prep Specialist
+            </h2>
+
+            <div style="margin-bottom: 40px; display: flex; gap: 10px;">
+                <button class="btn btn-outline" onclick="showLevel('easy')" id="btn-easy"
+                    style="flex: 1;">Beginner</button>
+                <button class="btn btn-outline" onclick="showLevel('medium')" id="btn-medium"
+                    style="flex: 1;">Professional</button>
+                <button class="btn btn-outline" onclick="showLevel('hard')" id="btn-hard"
+                    style="flex: 1;">Expert</button>
+            </div>
+
+            <div id="qa-easy" class="qa-set">
+                {% for q in interview_data.Easy %}
+                <div class="qa-card" onclick="toggleAnswer(this)">
+                    <div style="font-weight: 600;">Q: {{ q.question }}</div>
+                    <div class="qa-answer">
+                        <strong style="color: var(--primary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">💡 Suggested Strategy:</strong>
+                        <p style="margin-top: 10px; line-height: 1.6;">{{ q.suggested_answer }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="qa-medium" class="qa-set" style="display: none;">
+                {% for q in interview_data.Medium %}
+                <div class="qa-card" onclick="toggleAnswer(this)">
+                    <div style="font-weight: 600;">Q: {{ q.question }}</div>
+                    <div class="qa-answer">
+                        <strong style="color: var(--primary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">💡 Suggested Strategy:</strong>
+                        <p style="margin-top: 10px; line-height: 1.6;">{{ q.suggested_answer }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="qa-hard" class="qa-set" style="display: none;">
+                {% for q in interview_data.Hard %}
+                <div class="qa-card" onclick="toggleAnswer(this)">
+                    <div style="font-weight: 600;">Q: {{ q.question }}</div>
+                    <div class="qa-answer">
+                        <strong style="color: var(--primary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">💡 Suggested Strategy:</strong>
+                        <p style="margin-top: 10px; line-height: 1.6;">{{ q.suggested_answer }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 60px;">
+            <a href="/" class="btn btn-primary">Analyze Another Resume</a>
+        </div>
+    </main>
+
+    <!-- Chat Widget -->
+    <div id="chat-widget" class="chat-widget">
+        <div class="chat-header" onclick="toggleChat()">
+            <span>💬 Chat with your Resume</span>
+            <span id="chat-toggle-icon">▲</span>
+        </div>
+        <div id="chat-body" class="chat-body" style="display: none;">
+            <div id="chat-messages" class="chat-messages">
+                <div class="chat-message bot">Hi! I'm your AI Resume Assistant. Ask me anything about how to improve your resume!</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKeypress(event)">
+                <button onclick="sendChatMessage()" class="btn btn-primary" style="padding: 0 15px; height: 38px;">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const candidateId = "{{ candidate_id }}";
+
+        async function fixIssue(btn, fieldName, issueTitle) {
+            const originalText = btn.innerText;
+            btn.innerHTML = '<span class="loader" style="width:12px;height:12px;border-width:2px;border-top-color:var(--primary);border-color:rgba(79,70,229,0.2);"></span> Fixing...';
+            btn.disabled = true;
+            
+            const issueContext = `Field: ${fieldName}\nIssue: ${issueTitle}`;
+            
+            try {
+                const response = await fetch('/api/fix_resume_section', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ candidate_id: candidateId, issue_context: issueContext })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const fixResultDiv = btn.nextElementSibling;
+                    fixResultDiv.style.display = 'block';
+                    fixResultDiv.innerHTML = `<strong>Suggested Rewrite:</strong><br><span style="color: var(--primary);">${data.rewritten_text}</span>`;
+                    btn.style.display = 'none'; // Hide the button after fixing
+                } else {
+                    alert("Error: " + (data.error || "Failed to fix issue"));
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("Error connecting to server.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+
+
+        // Chat Widget Logic
+        let chatHistory = [];
+        
+        function toggleChat() {
+            const body = document.getElementById('chat-body');
+            const icon = document.getElementById('chat-toggle-icon');
+            if (body.style.display === 'none') {
+                body.style.display = 'flex';
+                icon.innerText = '▼';
+            } else {
+                body.style.display = 'none';
+                icon.innerText = '▲';
+            }
+        }
+        
+        function handleChatKeypress(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+        
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            
+            input.value = '';
+            appendMessage('user', msg);
+            chatHistory.push({ role: 'user', content: msg });
+            
+            const typingId = 'typing-' + Date.now();
+            appendTypingIndicator(typingId);
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ candidate_id: candidateId, messages: chatHistory })
+                });
+                const data = await response.json();
+                
+                document.getElementById(typingId).remove();
+                
+                if (response.ok) {
+                    appendMessage('bot', data.reply);
+                    chatHistory.push({ role: 'assistant', content: data.reply });
+                } else {
+                    appendMessage('bot', "Sorry, I encountered an error. Please try again.");
+                }
+            } catch (e) {
+                if(document.getElementById(typingId)) document.getElementById(typingId).remove();
+                appendMessage('bot', "Error connecting to server.");
+            }
+        }
+        
+        function appendMessage(sender, text) {
+            const msgContainer = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-message ' + sender;
+            msgDiv.innerText = text;
+            msgContainer.appendChild(msgDiv);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+        
+        function appendTypingIndicator(id) {
+            const msgContainer = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.id = id;
+            msgDiv.className = 'chat-message bot';
+            msgDiv.innerHTML = '<span class="loader" style="width:12px;height:12px;border-width:2px;border-top-color:var(--primary);border-color:rgba(79,70,229,0.2);"></span> Typing...';
+            msgContainer.appendChild(msgDiv);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+
+        async function analyzeJobMatch() {
+            const jdText = document.getElementById('jd-input').value.trim();
+            if (!jdText) {
+                alert("Please paste a Job Description first.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-match-jd');
+            const originalText = btn.innerText;
+            btn.innerHTML = '<span class="loader" style="width:16px;height:16px;border-width:2px;"></span> Analyzing...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/match_jd', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ candidate_id: candidateId, job_description: jdText })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Update UI
+                    document.getElementById('jd-match-results').style.display = 'block';
+                    
+                    const score = data.match_percentage || 0;
+                    document.getElementById('jd-score-text').innerText = score;
+                    const circle = document.getElementById('jd-score-circle');
+                    circle.style.setProperty('--percent', score + '%');
+                    
+                    let color = '#ef4444';
+                    if (score >= 80) color = '#10b981';
+                    else if (score >= 50) color = '#f59e0b';
+                    circle.style.setProperty('--warning', color);
+
+                    document.getElementById('jd-match-analysis').innerText = data.match_analysis || '';
+                    
+                    const missingContainer = document.getElementById('jd-missing-skills-container');
+                    const missingDiv = document.getElementById('jd-missing-skills');
+                    
+                    if (data.missing_skills && data.missing_skills.length > 0) {
+                        missingContainer.style.display = 'block';
+                        missingDiv.innerHTML = data.missing_skills.map(s => 
+                            `<span class="tag" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">${s}</span>`
+                        ).join('');
+                    } else {
+                        missingContainer.style.display = 'none';
+                    }
+                } else {
+                    alert("Error: " + (data.error || "Failed to analyze match"));
+                }
+            } catch (e) {
+                alert("Error connecting to server.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Scroll Reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        function showLevel(level) {
+            document.querySelectorAll('.qa-set').forEach(set => set.style.display = 'none');
+            document.getElementById('qa-' + level).style.display = 'block';
+
+            document.querySelectorAll('.btn-outline').forEach(btn => {
+                btn.style.background = 'transparent';
+                btn.style.borderColor = 'var(--primary)';
+                btn.style.color = 'var(--primary)';
+            });
+            const activeBtn = document.getElementById('btn-' + level);
+            activeBtn.style.background = 'var(--primary)';
+            activeBtn.style.color = 'white';
+            activeBtn.style.borderColor = 'var(--primary)';
+        }
+
+        function toggleAnswer(card) {
+            const answer = card.querySelector('.qa-answer');
+            const isOpen = answer.style.display === 'block';
+            
+            // Close all other answers in the same set for a clean accordion effect
+            card.parentElement.querySelectorAll('.qa-answer').forEach(el => el.style.display = 'none');
+            
+            answer.style.display = isOpen ? 'none' : 'block';
+        }
+
+        // Init level
+        showLevel('easy');
+
+        // Animate progress bars
+        setTimeout(() => {
+            document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+                bar.style.width = bar.getAttribute('data-percent') + '%';
+            });
+        }, 500);
+    </script>
+</body>
+
+</html>
