@@ -9,6 +9,7 @@ import base64
 from groq import Groq
 from dotenv import load_dotenv
 import pymongo
+import certifi
 from bson.objectid import ObjectId
 
 # Load environment variables
@@ -31,10 +32,21 @@ else:
     client = None
 
 # Initialize MongoDB Connection
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-mongo_client = pymongo.MongoClient(MONGO_URI)
-db = mongo_client["resume_analyzer_mca"]
-candidates_collection = db["candidates"]
+MONGO_URI = os.getenv(
+    "MONGO_URI",
+    "mongodb+srv://resume_user:Resume%4012345@cluster0.lbv6d2x.mongodb.net/resume_analyzer_mca?retryWrites=true&w=majority"
+)
+try:
+    mongo_client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, tlsCAFile=certifi.where())
+    mongo_client.admin.command("ping")
+    db = mongo_client["resume_analyzer_mca"]
+    candidates_collection = db["candidates"]
+    print("[SUCCESS] MongoDB Connected Successfully")
+except Exception as e:
+    print("[ERROR] MongoDB Connection Failed:", e)
+    mongo_client = None
+    db = None
+    candidates_collection = None
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
