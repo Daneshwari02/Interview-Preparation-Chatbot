@@ -9,7 +9,6 @@ import base64
 from groq import Groq
 from dotenv import load_dotenv
 import pymongo
-import certifi
 from bson.objectid import ObjectId
 
 # Load environment variables
@@ -37,7 +36,12 @@ MONGO_URI = os.getenv(
     "mongodb+srv://resume_user:Resume%4012345@cluster0.lbv6d2x.mongodb.net/resume_analyzer_mca?retryWrites=true&w=majority"
 )
 try:
-    mongo_client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, tlsCAFile=certifi.where())
+    mongo_client = pymongo.MongoClient(
+        MONGO_URI,
+        serverSelectionTimeoutMS=5000,
+        tls=True,
+        tlsAllowInvalidCertificates=True
+    )
     mongo_client.admin.command("ping")
     db = mongo_client["resume_analyzer_mca"]
     candidates_collection = db["candidates"]
