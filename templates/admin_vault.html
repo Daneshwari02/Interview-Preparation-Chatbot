@@ -84,6 +84,7 @@
         <div class="nav-logo" onclick="window.location.href='/'" style="cursor: pointer;">Intervault</div>
         <div class="nav-links">
             <a href="/">Home</a>
+            <a href="/admin-logout" class="btn btn-outline" style="padding: 8px 16px;">Logout</a>
         </div>
     </nav>
 
@@ -119,7 +120,7 @@
                                 </span>
                             </td>
                             <td style="max-width: 400px; color: var(--text-muted); font-size: 0.9rem;">
-                                {{ candidate.summary[:150] }}{% if candidate.summary|length > 150 %}...{% endif %}
+                                {{ candidate.get('summary', '')[:150] }}{% if candidate.get('summary', '')|length > 150 %}...{% endif %}
                             </td>
                             <td>
                                 <a href="/candidate/{{ candidate._id }}" class="btn-view">View Analysis →</a>

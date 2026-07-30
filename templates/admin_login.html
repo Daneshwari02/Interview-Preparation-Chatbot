@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Intervault</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .flash-messages {
+            color: #ef4444;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background Animations -->
+    <div class="bg-blob"
+        style="top: -100px; left: -100px; width: 400px; height: 400px; background: rgba(59, 130, 246, 0.2);"></div>
+
+    <nav>
+        <div class="nav-logo" onclick="window.location.href='/'" style="cursor: pointer;">Intervault</div>
+    </nav>
+
+    <main>
+        <div class="login-container reveal active">
+            <h2>Admin Login</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">Access the candidate vault.</p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form action="/admin-login" method="post">
+                <input type="text" name="username" class="login-input" placeholder="Username" required autofocus>
+                <input type="password" name="password" class="login-input" placeholder="Password" required>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+        </div>
+    </main>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 import os
 import re
 import json
@@ -16,6 +16,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "mca_project_secret_key_123")
+
+# Admin credentials
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
 # Configurations
 UPLOAD_FOLDER = 'uploads'
@@ -515,8 +519,27 @@ def chat():
         print(f"Error in chat: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_vault'))
+        else:
+            flash("Invalid credentials")
+    return render_template('admin_login.html')
+
+@app.route('/admin-logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('home'))
+
 @app.route('/admin-vault')
 def admin_vault():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     try:
         # Fetch all candidates, sorted by most recent first
         all_candidates = list(candidates_collection.find().sort("_id", -1))
